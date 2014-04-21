@@ -1,5 +1,6 @@
 package com.example.train_android_contentprovider;
 
+import com.example.MyCursorAdapter;
 import com.example.MySQLiteHelper;
 import com.example.database.provider.MyProvider;
 import com.example.train_android_contentprovider.PhongBan;
@@ -45,7 +46,7 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 
 	LoaderCallbacks<Cursor> mCallbacks = this;
 	int LOADER_ID = 1;
-	SimpleCursorAdapter adapter2;
+	MyCursorAdapter adapter2;
 	LoaderManager loaderManager = getLoaderManager();
 	CursorLoader cursorLoader;
 	private static String TAG = "CursorLoader";
@@ -56,10 +57,7 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		setContentView(R.layout.activity_main);
 		db = new MySQLiteHelper(this);
 
-		String[] from = { db.COL_MAPHONG, db.COL_NAME };
-		int[] to = { R.id.pb };
-		adapter2 = new SimpleCursorAdapter(this, R.layout.item_phongban, null,
-				from, to, 0);
+		adapter2 = new MyCursorAdapter(this, null);
 		getWidgets();
 		listView.setAdapter(adapter2);
 		loaderManager.initLoader(LOADER_ID, null, mCallbacks);
@@ -210,6 +208,5 @@ public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 		String ma = maPban.getText() + "";
 		PhongBan phongBan = new PhongBan(ten, ma);
 		db.addPhongBan(phongBan);
-		loaderManager.restartLoader(LOADER_ID, null, mCallbacks);
 	}
 }
