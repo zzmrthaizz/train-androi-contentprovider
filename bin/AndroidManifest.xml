@@ -22,11 +22,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <provider 
+
+        <provider
             android:name="com.example.database.provider.MyProvider"
-            android:authorities="com.example.database.provider.MyProvider">
-            
+            android:authorities="com.example.database.provider.MyProvider" >
         </provider>
+
+        <activity
+            android:name="com.example.train_android_contentprovider.ThemNhanVienActivity"
+            android:label="@string/title_activity_them_nhan_vien" >
+        </activity>
     </application>
 
 </manifest>

@@ -1,15 +1,24 @@
 package com.example.train_android_contentprovider;
 
 import com.example.MySQLiteHelper;
+import com.example.database.provider.MyProvider;
 import com.example.train_android_contentprovider.PhongBan;
 import com.example.train_android_contentprovider.R;
 
 import android.os.Bundle;
+import android.R.integer;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.LoaderManager;
+import android.app.LoaderManager.LoaderCallbacks;
+import android.content.ContentResolver;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
@@ -22,8 +31,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
+import android.content.Loader;
 
-public class MainActivity extends Activity {
+@SuppressLint("NewApi")
+public class MainActivity extends Activity implements LoaderCallbacks<Cursor> {
 
 	EditText maPban;
 	EditText tenPban;
@@ -31,18 +42,32 @@ public class MainActivity extends Activity {
 	Button nhap;
 	PhongBan phongbanselected;
 	MySQLiteHelper db;
+
+	LoaderCallbacks<Cursor> mCallbacks = this;
+	int LOADER_ID = 1;
 	SimpleCursorAdapter adapter2;
-	Cursor cursor;
-	long idPhongban;
+	LoaderManager loaderManager = getLoaderManager();
+	CursorLoader cursorLoader;
+	private static String TAG = "CursorLoader";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		db = new MySQLiteHelper(this);
+
+		String[] from = { db.COL_MAPHONG, db.COL_NAME };
+		int[] to = { R.id.pb };
+		adapter2 = new SimpleCursorAdapter(this, R.layout.item_phongban, null,
+				from, to, 0);
 		getWidgets();
-		getFromDatabase();
+		listView.setAdapter(adapter2);
+		loaderManager.initLoader(LOADER_ID, null, mCallbacks);
+		// loaderManager = getLoaderManager();
+		// startManagingCursor(cursor);
+
 		addEvent();
+		loaderManager.restartLoader(LOADER_ID, null, mCallbacks);
 	}
 
 	private void addEvent() {
@@ -52,24 +77,26 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				// Creat phongban
-				String ten = tenPban.getText() + "";
-				String ma = maPban.getText() + "";
-				PhongBan phongBan = new PhongBan(ten, ma);
-				db.addPhongBan(phongBan);
-				adapter2.notifyDataSetChanged();
-
+				doThemPB();
 			}
+
+
 		});
+
 		registerForContextMenu(listView);
 		listView.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
 			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
 					int arg2, long arg3) {
-				idPhongban = arg3;
+				Cursor a = (Cursor) arg0.getItemAtPosition(arg2);
+				phongbanselected = new PhongBan();
+				phongbanselected.setMaPhong(a.getString(0));
+				phongbanselected.setNamePhong(a.getString(1));
 				return false;
 			}
 		});
+		
 	}
 
 	@Override
@@ -86,7 +113,7 @@ public class MainActivity extends Activity {
 
 		switch (item.getItemId()) {
 		case R.id.themnv:
-			// dothemnv();
+			dothemnv();
 			break;
 		case R.id.dsnhanvien:
 			// dohiends();
@@ -101,6 +128,14 @@ public class MainActivity extends Activity {
 		return super.onContextItemSelected(item);
 	}
 
+	private void dothemnv() {
+		Bundle bundle = new Bundle();
+		bundle.putSerializable("Phongban", phongbanselected);
+		Intent intent = new Intent(this, ThemNhanVienActivity.class);
+		intent.putExtra("data", bundle);
+		startActivityForResult(intent, 1);
+	}
+
 	private void doxoa() {
 		// TODO Auto-generated method stub
 		AlertDialog.Builder xoa = new AlertDialog.Builder(MainActivity.this);
@@ -110,13 +145,7 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				phongbanselected = new PhongBan();
-				phongbanselected.setMaPhong(String.valueOf(idPhongban));
-				Toast.makeText(MainActivity.this, String.valueOf(idPhongban),
-						Toast.LENGTH_LONG).show();
 				db.deletePhongBan(phongbanselected);
-				adapter2.notifyDataSetChanged();
-
 			}
 		});
 		xoa.setPositiveButton("No", new DialogInterface.OnClickListener() {
@@ -133,12 +162,7 @@ public class MainActivity extends Activity {
 	private void getFromDatabase() {
 		// TODO Auto-generated method stub
 
-		String[] from = { db.COL_NAME };
-		int[] to = { R.id.pb };
-		cursor = db.getPhongBan();
-		adapter2 = new SimpleCursorAdapter(this, R.layout.item_phongban,
-				cursor, from, to);
-		listView.setAdapter(adapter2);
+		// loaderManager.initLoader(1, null, this);
 
 	}
 
@@ -158,4 +182,34 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		// TODO Auto-generated method stub
+		String[] project = { db.COL_MAPHONG, db.COL_NAME };
+		cursorLoader = new CursorLoader(MainActivity.this, MyProvider.PBAN_URI,
+				project, null, null, null);
+		return cursorLoader;
+	}
+
+	@Override
+	public void onLoadFinished(Loader<Cursor> arg0, Cursor arg1) {
+		// TODO Auto-generated method stub
+		adapter2.swapCursor(arg1);
+
+	}
+
+	@Override
+	public void onLoaderReset(Loader<Cursor> arg0) {
+		// TODO Auto-generated method stub
+		adapter2.swapCursor(null);
+
+	}
+	private void doThemPB() {
+		// TODO Auto-generated method stub
+		String ten = tenPban.getText() + "";
+		String ma = maPban.getText() + "";
+		PhongBan phongBan = new PhongBan(ten, ma);
+		db.addPhongBan(phongBan);
+		loaderManager.restartLoader(LOADER_ID, null, mCallbacks);
+	}
 }

@@ -1,5 +1,6 @@
 package com.example.database.provider;
 
+import android.R.id;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
@@ -152,12 +153,11 @@ public class MyProvider extends ContentProvider {
 			String id = uri.getLastPathSegment();
 			if (TextUtils.isEmpty(selection)) {
 				rowsDeleted = sqlDB.delete(PBAN_TABLE,
-						MySQLiteHelper.COL_MAPHONG + " = " + id, null);
+						MySQLiteHelper.COL_MAPHONG + "=" + id, null);
 			} else {
 				rowsDeleted = sqlDB.delete(PBAN_TABLE,
-						MySQLiteHelper.COL_MAPHONG + " = " + id + " and "
+						MySQLiteHelper.COL_MAPHONG + "=" + id + " and "
 								+ selection, selectionArgs);
-
 			}
 			break;
 		default:
